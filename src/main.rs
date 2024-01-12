@@ -26,6 +26,7 @@ use dist_scheduler::*;
 #[derive(Default)]
 pub struct TaskScheduler {
     tasks: Mutex<Vec<Task>>,
+    // all completed tasks just sink into this map
     _completed_tasks: Arc<DashMap<String, Vec<RecordBatch>>>,
 }
 
@@ -84,6 +85,8 @@ impl FlightService for TaskScheduler {
             data.map_err(|e| FlightError::DecodeError(e.to_string())),
         );
 
+        // todo, put into completed tasks map
+
         let out = record_batch_stream.map(|batch| {
             let batch = batch?;
             println!("Received batch = {:?}", batch);
@@ -108,7 +111,9 @@ impl FlightService for TaskScheduler {
             Ok(Actions::GetTask(_)) => {
                 let mut tasks = self.tasks.lock().unwrap();
                 let maybe_task = tasks.pop();
+
                 if let Some(task) = maybe_task {
+                    // todo, put task back on queue with a pending status
                     let stream = futures::stream::once(async move {
                         let mut buf = Vec::new();
                         task.encode(&mut buf).unwrap();
