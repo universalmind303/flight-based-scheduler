@@ -114,6 +114,7 @@ impl FlightService for TaskScheduler {
 
                 if let Some(task) = maybe_task {
                     // todo, put task back on queue with a pending status
+                    // the pending task should have a worker id assigned to it.
                     let stream = futures::stream::once(async move {
                         let mut buf = Vec::new();
                         task.encode(&mut buf).unwrap();
